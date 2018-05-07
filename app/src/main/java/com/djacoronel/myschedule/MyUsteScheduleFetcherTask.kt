@@ -37,11 +37,11 @@ class MyUsteScheduleFetcherTask(activity: MainActivity) : AsyncTask<String, Void
             HttpsTrustManager.allowAllSSL()
             val cookies = getCookies()
             val rows = loginAndGetSchduleTableRows(studNo, password, cookies)
-            for (i in 1..rows.lastIndex){
-                addCourse(rows[i],courses)
+            for (i in 1..rows.lastIndex) {
+                addCourse(rows[i], courses)
             }
 
-        } catch (e: Exception){
+        } catch (e: Exception) {
             e.printStackTrace()
         }
 
@@ -82,8 +82,7 @@ class MyUsteScheduleFetcherTask(activity: MainActivity) : AsyncTask<String, Void
         val schedule = row.select("td")[5].html()
         val scheduleSplit = schedule.split("<br>")
 
-        for (split in scheduleSplit){
-            Log.i(split,"<---")
+        for (split in scheduleSplit) {
 
             val course = Course()
             course.code = row.select("td")[0].text()
@@ -91,7 +90,7 @@ class MyUsteScheduleFetcherTask(activity: MainActivity) : AsyncTask<String, Void
             course.section = row.select("td")[4].text()
 
             val split2 = split.trim().split(" ")
-            
+
             course.day = split2[0]
             course.schedule = "${split2[1]} - ${split2[3]}"
 
@@ -115,7 +114,8 @@ class MyUsteScheduleFetcherTask(activity: MainActivity) : AsyncTask<String, Void
         if (courses.isEmpty())
             weakActivity.get()?.toast("Failed to fetch schedule. Check your internet connection.")
         else
-            weakActivity.get()?.showSchedule(courses)
+            weakActivity.get()?.storeSchedule(courses)
+
 
         weakActivity.get()?.let {
             if (it.isFinishing || it.isDestroyed) {

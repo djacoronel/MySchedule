@@ -4,6 +4,8 @@ apply plugin: 'kotlin-android'
 
 apply plugin: 'kotlin-android-extensions'
 
+apply plugin: 'kotlin-kapt'
+
 android {
     compileSdkVersion 27
     defaultConfig {
@@ -35,4 +37,6 @@ dependencies {
     implementation 'com.android.support:cardview-v7:27.1.1'
     implementation "org.jetbrains.anko:anko-commons:0.10.5"
     implementation 'org.jsoup:jsoup:1.10.3'
+    implementation "android.arch.persistence.room:runtime:1.0.0"
+    kapt "android.arch.persistence.room:compiler:1.0.0"
 }

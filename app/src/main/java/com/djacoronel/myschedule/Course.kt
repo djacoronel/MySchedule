@@ -1,12 +1,16 @@
 package com.djacoronel.myschedule
 
+import android.arch.persistence.room.Entity
+import android.arch.persistence.room.PrimaryKey
 import java.text.SimpleDateFormat
 import java.util.*
 
 /**
  * Created by djacoronel on 5/6/18.
  */
-class Course(){
+@Entity
+class Course{
+    @PrimaryKey(autoGenerate = true)
     var id = 0
     var code = ""
     var title = ""

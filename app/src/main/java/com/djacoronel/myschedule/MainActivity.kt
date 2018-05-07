@@ -14,20 +14,29 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import kotlinx.android.synthetic.main.activity_main.*
+import java.util.*
+import android.arch.persistence.room.Room
+
 
 class MainActivity : AppCompatActivity() {
     lateinit var viewPagerAdapter: ViewPagerAdapter
-    
+    lateinit var db: AppDatabase
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        db = Room.databaseBuilder(applicationContext,
+                AppDatabase::class.java, "myschedule-database").allowMainThreadQueries().build()
+
         setSupportActionBar(toolbar)
         viewPagerAdapter = ViewPagerAdapter()
-        
+
         container.adapter = viewPagerAdapter
         container.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabs))
         tabs.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(container))
+
+        showSchedule()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -59,7 +68,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun showSchedule(courses: List<Course>) {
+    fun storeSchedule(courses: List<Course>) {
+        db.CourseDao().deleteAllCourses()
+        for (course in courses) {
+            db.CourseDao().insertCourse(course)
+        }
+        showSchedule()
+    }
+
+    private fun showSchedule() {
+        val courses = db.CourseDao().getCourses()
+
+        val recyclerViews = mutableListOf<RecyclerView>()
         val days = listOf("M", "T", "W", "Th", "F", "S", "Su")
         for (i in 0..6) {
 
@@ -70,12 +90,30 @@ class MainActivity : AppCompatActivity() {
             adapter.replaceData(coursesForDay.sortedBy { it.getStartTime() })
             adapter.notifyDataSetChanged()
 
-            viewPagerAdapter.addRecycler(recycler)
-            viewPagerAdapter.notifyDataSetChanged()
+            recyclerViews.add(recycler)
+        }
+        viewPagerAdapter.replaceData(recyclerViews)
+        viewPagerAdapter.notifyDataSetChanged()
+
+        setCurrentDayOfWeek()
+    }
+
+    private fun setCurrentDayOfWeek() {
+        val calendar = Calendar.getInstance()
+        val day = calendar.get(Calendar.DAY_OF_WEEK)
+
+        when (day) {
+            Calendar.MONDAY -> container.setCurrentItem(0, true)
+            Calendar.TUESDAY -> container.setCurrentItem(1, true)
+            Calendar.WEDNESDAY -> container.setCurrentItem(2, true)
+            Calendar.THURSDAY -> container.setCurrentItem(3, true)
+            Calendar.FRIDAY -> container.setCurrentItem(4, true)
+            Calendar.SATURDAY -> container.setCurrentItem(5, true)
+            Calendar.SUNDAY -> container.setCurrentItem(6, true)
         }
     }
-    
-    private fun createRecycler(): RecyclerView{
+
+    private fun createRecycler(): RecyclerView {
         val courseRecyclerView = RecyclerView(this)
         courseRecyclerView.layoutManager = LinearLayoutManager(this)
         courseRecyclerView.adapter = RecyclerAdapter()
@@ -90,9 +128,8 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
-    inner class ViewPagerAdapter: PagerAdapter(){
-        private val mRecyclerList = mutableListOf<RecyclerView>()
+    inner class ViewPagerAdapter : PagerAdapter() {
+        private var mRecyclerList = mutableListOf<RecyclerView>()
 
         override fun getCount(): Int {
             return mRecyclerList.size
@@ -119,9 +156,9 @@ class MainActivity : AppCompatActivity() {
                 mRecyclerList.indexOf(`object`)
             }
         }
-        
-        fun addRecycler(recyclerView: RecyclerView){
-            mRecyclerList.add(recyclerView)
+
+        fun replaceData(recyclerViews: MutableList<RecyclerView>) {
+            mRecyclerList = recyclerViews
             notifyDataSetChanged()
         }
     }
