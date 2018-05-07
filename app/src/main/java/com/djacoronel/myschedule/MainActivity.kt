@@ -62,13 +62,12 @@ class MainActivity : AppCompatActivity() {
     fun showSchedule(courses: List<Course>) {
         val days = listOf("M", "T", "W", "Th", "F", "S", "Su")
         for (i in 0..6) {
-            //val adapter = mSectionsPagerAdapter.getItem(i)
-            //adapter.replaceData(courses.filter { it.day == days[i] })
-            //adapter.notifyDataSetChanged()
-            
+
             val recycler = createRecycler()
             val adapter = (recycler.adapter as RecyclerAdapter)
-            adapter.replaceData(courses.filter { it.day == days[i] })
+
+            val coursesForDay = courses.filter { it.day == days[i] }
+            adapter.replaceData(coursesForDay.sortedBy { it.getStartTime() })
             adapter.notifyDataSetChanged()
 
             viewPagerAdapter.addRecycler(recycler)
