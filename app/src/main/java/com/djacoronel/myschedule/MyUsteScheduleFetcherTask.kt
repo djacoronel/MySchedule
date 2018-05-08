@@ -77,34 +77,44 @@ class MyUsteScheduleFetcherTask(activity: MainActivity) : AsyncTask<String, Void
     }
 
     private fun addCourse(row: Element, courses: MutableList<Course>) {
-
-
         val schedule = row.select("td")[5].html()
         val scheduleSplit = schedule.split("<br>")
 
         for (split in scheduleSplit) {
-
-            val course = Course()
-            course.code = row.select("td")[0].text()
-            course.title = row.select("td")[1].text()
-            course.section = row.select("td")[4].text()
-
             val split2 = split.trim().split(" ")
 
-            course.day = split2[0]
-            course.schedule = "${split2[1]} - ${split2[3]}"
+            var i = 0
+            var day: String
+            while (i < split2[0].length){
+                val course = Course()
+                course.code = row.select("td")[0].text()
+                course.title = row.select("td")[1].text()
+                course.section = row.select("td")[4].text()
+                course.schedule = "${split2[1]} - ${split2[3]}"
 
-            var location = ""
+                val charArray = split2[0].toCharArray()
+                if (i+1 < split2[0].length &&
+                        charArray[i].isUpperCase() &&
+                        charArray[i+1].isLowerCase()){
+                    day = "${charArray[i]}${charArray[i+1]}"
+                    i+=2
+                } else {
+                    day = "${charArray[i]}"
+                    i+=1
+                }
+                Log.i("TEST",day)
+                course.day = day
 
-            for (i in 4..split2.lastIndex) {
-                location += split2[i]
-                if (i != split2.lastIndex)
-                    location += " "
+                var location = ""
+                for (j in 4..split2.lastIndex) {
+                    location += split2[j]
+                    if (j != split2.lastIndex)
+                        location += " "
+                }
+                course.location = location
+
+                courses.add(course)
             }
-
-            course.location = location
-
-            courses.add(course)
         }
     }
 
