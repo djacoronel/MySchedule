@@ -23,13 +23,17 @@
       android:background="?attr/colorPrimary"
       app:layout_scrollFlags="scroll|enterAlways"
       app:popupTheme="@style/AppTheme.PopupOverlay"
-      app:title="@string/app_name">
+      android:theme="@style/AppTheme"
+      app:title="@string/app_name"
+      app:titleTextColor="@android:color/black">
 
     </android.support.v7.widget.Toolbar>
 
     <android.support.design.widget.TabLayout
       android:id="@+id/tabs"
       app:tabMode="scrollable"
+      app:tabSelectedTextColor="@android:color/black"
+      app:tabTextColor="@android:color/black"
       android:layout_width="match_parent"
       android:layout_height="wrap_content">
 

@@ -18,14 +18,15 @@ class AlarmReceiver : BroadcastReceiver() {
         val channelId = "channel_00"
         val name = "MySchedule Notifications"
 
-        val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+        val notifIntent = Intent(context, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(context, 0, notifIntent, PendingIntent.FLAG_UPDATE_CURRENT)
 
         val notification = NotificationCompat.Builder(context, channelId)
                 .setStyle(NotificationCompat.BigTextStyle())
                 .setContentTitle(courseCode)
                 .setContentText(location+ "\n"+ schedule)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
-                .setSmallIcon(R.drawable.notification_icon_background)
+                .setSmallIcon(R.drawable.ic_event_black_24dp)
                 .setAutoCancel(false)
                 .setContentIntent(pendingIntent)
                 .build()

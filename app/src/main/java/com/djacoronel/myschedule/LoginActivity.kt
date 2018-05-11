@@ -54,6 +54,11 @@ class LoginActivity : AppCompatActivity() {
             toast("Invalid student number or password")
         }
     }
+
+    override fun onBackPressed() {
+        setResult(Activity.RESULT_CANCELED, Intent())
+        finish()
+    }
 }
 
 

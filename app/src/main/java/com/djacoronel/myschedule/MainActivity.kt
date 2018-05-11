@@ -80,6 +80,7 @@ class MainActivity : AppCompatActivity() {
             db.CourseDao().insertCourse(course)
         }
         showSchedule()
+        setNotifications()
     }
 
     private fun showSchedule() {
