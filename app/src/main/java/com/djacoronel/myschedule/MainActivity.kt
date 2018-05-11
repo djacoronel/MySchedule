@@ -1,6 +1,8 @@
 package com.djacoronel.myschedule
 
 import android.app.Activity
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
 import android.support.design.widget.TabLayout
@@ -16,6 +18,9 @@ import android.view.ViewGroup
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 import android.arch.persistence.room.Room
+import android.content.Context
+import android.util.Log
+import org.jetbrains.anko.toast
 
 
 class MainActivity : AppCompatActivity() {
@@ -37,6 +42,7 @@ class MainActivity : AppCompatActivity() {
         tabs.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(container))
 
         showSchedule()
+        setNotifications()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -96,6 +102,26 @@ class MainActivity : AppCompatActivity() {
         viewPagerAdapter.notifyDataSetChanged()
 
         setCurrentDayOfWeek()
+    }
+
+    private fun setNotifications() {
+        val courses = db.CourseDao().getCourses()
+
+        for (course in courses) {
+            val alarmIntent = Intent(this, AlarmReceiver::class.java)
+            alarmIntent.putExtra("courseCode", course.code)
+            alarmIntent.putExtra("location", course.location)
+            alarmIntent.putExtra("schedule", course.schedule)
+
+            val requestCode = courses.indexOf(course)
+            val pendingIntent = PendingIntent.getBroadcast(this, requestCode, alarmIntent, PendingIntent.FLAG_ONE_SHOT)
+            val manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+            manager.set(AlarmManager.RTC_WAKEUP, course.getReminderTime(), pendingIntent)
+            manager.setRepeating(AlarmManager.RTC_WAKEUP, course.getReminderTime(), AlarmManager.INTERVAL_DAY * 7, pendingIntent)
+
+            Log.i(course.code, course.getReminderTime().toString())
+        }
     }
 
     private fun setCurrentDayOfWeek() {
