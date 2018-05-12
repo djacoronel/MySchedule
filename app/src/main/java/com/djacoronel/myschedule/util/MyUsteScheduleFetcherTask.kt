@@ -1,9 +1,10 @@
-package com.djacoronel.myschedule
+package com.djacoronel.myschedule.util
 
-import android.app.Activity
 import android.app.ProgressDialog
 import android.os.AsyncTask
 import android.util.Log
+import com.djacoronel.myschedule.data.Course
+import com.djacoronel.myschedule.view.MainActivity
 import org.jetbrains.anko.toast
 import org.jsoup.Connection
 import org.jsoup.Jsoup

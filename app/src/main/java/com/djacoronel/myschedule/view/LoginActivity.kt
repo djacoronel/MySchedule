@@ -1,10 +1,11 @@
-package com.djacoronel.myschedule
+package com.djacoronel.myschedule.view
 
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import com.djacoronel.myschedule.R
 import com.google.android.gms.ads.AdRequest
 import kotlinx.android.synthetic.main.activity_login.*
 import org.jetbrains.anko.toast

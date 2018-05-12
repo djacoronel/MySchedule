@@ -1,9 +1,11 @@
-package com.djacoronel.myschedule
+package com.djacoronel.myschedule.view
 
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.djacoronel.myschedule.data.Course
+import com.djacoronel.myschedule.R
 import kotlinx.android.synthetic.main.course_layout.view.*
 
 /**

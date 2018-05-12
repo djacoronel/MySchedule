@@ -1,4 +1,4 @@
-package com.djacoronel.myschedule;
+package com.djacoronel.myschedule.util;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;

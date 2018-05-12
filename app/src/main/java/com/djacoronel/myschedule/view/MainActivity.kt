@@ -1,4 +1,4 @@
-package com.djacoronel.myschedule
+package com.djacoronel.myschedule.view
 
 import android.app.Activity
 import android.app.AlarmManager
@@ -17,8 +17,12 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import com.djacoronel.myschedule.*
+import com.djacoronel.myschedule.data.AppDatabase
+import com.djacoronel.myschedule.data.Course
+import com.djacoronel.myschedule.util.AlarmReceiver
+import com.djacoronel.myschedule.util.MyUsteScheduleFetcherTask
 import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdSize
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 

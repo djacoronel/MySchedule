@@ -1,4 +1,4 @@
-package com.djacoronel.myschedule
+package com.djacoronel.myschedule.data
 
 import android.arch.persistence.room.*
 
