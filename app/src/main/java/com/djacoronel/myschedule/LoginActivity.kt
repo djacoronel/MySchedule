@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import com.google.android.gms.ads.AdRequest
 import kotlinx.android.synthetic.main.activity_login.*
 import org.jetbrains.anko.toast
 
@@ -16,7 +17,9 @@ class LoginActivity : AppCompatActivity() {
 
         fetch_button.setOnClickListener { onFetchButtonPressed() }
         loadPrefs()
+        setupAds()
     }
+
 
     private fun loadPrefs() {
         val sharedPref = getPreferences(Context.MODE_PRIVATE)
@@ -59,6 +62,38 @@ class LoginActivity : AppCompatActivity() {
         setResult(Activity.RESULT_CANCELED, Intent())
         finish()
     }
+
+    private fun setupAds(){
+        val adRequest = AdRequest.Builder()
+                .addTestDevice("CEA54CA528FB019B75536189748EAF7E")
+                .addTestDevice("2F42DCE5AF01E77FB3B1748FFD2BFB08")
+                .addTestDevice("4CCC112819318A806ADC4807B6A0C444")
+                .build()
+
+        adView.loadAd(adRequest)
+    }
+
+    public override fun onPause() {
+        if (adView != null) {
+            adView.pause()
+        }
+        super.onPause()
+    }
+
+    public override fun onResume() {
+        super.onResume()
+        if (adView != null) {
+            adView.resume()
+        }
+    }
+
+    public override fun onDestroy() {
+        if (adView != null) {
+            adView.destroy()
+        }
+        super.onDestroy()
+    }
+
 }
 
 

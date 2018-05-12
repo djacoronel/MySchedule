@@ -17,6 +17,8 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 
@@ -39,6 +41,7 @@ class MainActivity : AppCompatActivity() {
         container.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabs))
         tabs.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(container))
 
+        setupAds()
         showSchedule()
         setNotifications()
     }
@@ -50,9 +53,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
-        if (id == R.id.action_settings) {
-            return true
-        } else if (id == R.id.action_fetch_schedule) {
+       if (id == R.id.action_fetch_schedule) {
             val intent = Intent(this, LoginActivity::class.java)
             startActivityForResult(intent, 2)
             return true
@@ -148,6 +149,37 @@ class MainActivity : AppCompatActivity() {
         courseRecyclerView.addItemDecoration(mDividerItemDecoration)
 
         return courseRecyclerView
+    }
+
+    private fun setupAds(){
+        val adRequest = AdRequest.Builder()
+                .addTestDevice("CEA54CA528FB019B75536189748EAF7E")
+                .addTestDevice("2F42DCE5AF01E77FB3B1748FFD2BFB08")
+                .addTestDevice("4CCC112819318A806ADC4807B6A0C444")
+                .build()
+
+        adView.loadAd(adRequest)
+    }
+
+    public override fun onPause() {
+        if (adView != null) {
+            adView.pause()
+        }
+        super.onPause()
+    }
+
+    public override fun onResume() {
+        super.onResume()
+        if (adView != null) {
+            adView.resume()
+        }
+    }
+
+    public override fun onDestroy() {
+        if (adView != null) {
+            adView.destroy()
+        }
+        super.onDestroy()
     }
 
 
