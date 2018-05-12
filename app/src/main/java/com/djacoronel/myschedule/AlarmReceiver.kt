@@ -27,7 +27,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 .setContentText(location+ "\n"+ schedule)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
                 .setSmallIcon(R.drawable.ic_event_black_24dp)
-                .setAutoCancel(false)
+                .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .build()
 
