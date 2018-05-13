@@ -1,48 +1,25 @@
 package com.djacoronel.myschedule.util
 
-import android.app.ProgressDialog
-import android.os.AsyncTask
 import com.djacoronel.myschedule.data.Course
-import com.djacoronel.myschedule.view.MainActivity
-import org.jetbrains.anko.toast
 import org.jsoup.Connection
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
-import java.lang.ref.WeakReference
 
 /**
- * Created by djacoronel on 5/7/18.
+ * Created by djacoronel on 5/13/18.
  */
-class MyUsteScheduleFetcherTask(activity: MainActivity) : AsyncTask<String, Void, List<Course>>() {
-    private var progressDialog = ProgressDialog(activity)
-    private var weakActivity = WeakReference<MainActivity>(activity)
+class MyUsteScheduleFetcherUtil {
     private val userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36"
 
-
-    override fun onPreExecute() {
-        super.onPreExecute()
-        progressDialog.setTitle("Fetching grades from MyUste")
-        progressDialog.setMessage("Loading...")
-        progressDialog.isIndeterminate = false
-        progressDialog.show()
-    }
-
-    override fun doInBackground(vararg params: String): List<Course> {
-        val studNo = params[0]
-        val password = params[1]
+    fun getCourses(studNo: String, password: String): List<Course>{
         val courses = arrayListOf<Course>()
 
-        try {
-            HttpsTrustManager.allowAllSSL()
-            val cookies = getCookies()
-            val rows = loginAndGetScheduleTableRows(studNo, password, cookies)
-            for (i in 1..rows.lastIndex) {
-                addCourse(rows[i], courses)
-            }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
+        HttpsTrustManager.allowAllSSL()
+        val cookies = getCookies()
+        val rows = loginAndGetScheduleTableRows(studNo, password, cookies)
+        for (i in 1..rows.lastIndex) {
+            addCourse(rows[i], courses)
         }
 
         return courses
@@ -113,25 +90,6 @@ class MyUsteScheduleFetcherTask(activity: MainActivity) : AsyncTask<String, Void
                 course.location = location
 
                 courses.add(course)
-            }
-        }
-    }
-
-    override fun onPostExecute(courses: List<Course>) {
-        super.onPostExecute(courses)
-
-        if (courses.isEmpty())
-            weakActivity.get()?.toast("Failed to fetch schedule. Check your internet connection.")
-        else
-            weakActivity.get()?.storeSchedule(courses)
-
-
-        weakActivity.get()?.let {
-            if (it.isFinishing || it.isDestroyed) {
-                return
-            }
-            if (progressDialog.isShowing) {
-                progressDialog.dismiss()
             }
         }
     }

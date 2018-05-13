@@ -21,9 +21,13 @@ import com.djacoronel.myschedule.*
 import com.djacoronel.myschedule.data.AppDatabase
 import com.djacoronel.myschedule.data.Course
 import com.djacoronel.myschedule.util.AlarmReceiver
-import com.djacoronel.myschedule.util.MyUsteScheduleFetcherTask
+import com.djacoronel.myschedule.util.MyUsteScheduleFetcherUtil
 import com.google.android.gms.ads.AdRequest
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
+import org.jetbrains.anko.toast
 import java.util.*
 
 
@@ -57,7 +61,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val id = item.itemId
-       if (id == R.id.action_fetch_schedule) {
+        if (id == R.id.action_fetch_schedule) {
             val intent = Intent(this, LoginActivity::class.java)
             startActivityForResult(intent, 2)
             return true
@@ -70,15 +74,32 @@ class MainActivity : AppCompatActivity() {
         } else if (requestCode == 2) {
             if (resultCode == Activity.RESULT_OK) {
 
-                val studNo = data.getStringExtra("studNo")
-                val password = data.getStringExtra("password")
+                Observable.just(data)
+                        .map { intent ->
+                            val studNo = intent.getStringExtra("studNo")
+                            val password = intent.getStringExtra("password")
 
-                MyUsteScheduleFetcherTask(this).execute(studNo, password)
+                            MyUsteScheduleFetcherUtil().getCourses(studNo, password)
+                        }
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnSubscribe { loading.visibility = View.VISIBLE }
+                        .subscribe(
+                                { courses ->
+                                    storeSchedule(courses)
+                                    loading.visibility = View.GONE
+                                },
+                                { throwable ->
+                                    throwable.printStackTrace()
+                                    loading.visibility = View.GONE
+                                    toast("Failed to fetch schedule :/")
+                                }
+                        )
             }
         }
     }
 
-    fun storeSchedule(courses: List<Course>) {
+    private fun storeSchedule(courses: List<Course>) {
         db.CourseDao().deleteAllCourses()
         for (course in courses) {
             db.CourseDao().insertCourse(course)
@@ -93,7 +114,6 @@ class MainActivity : AppCompatActivity() {
         val recyclerViews = mutableListOf<RecyclerView>()
         val days = listOf("M", "T", "W", "Th", "F", "S", "Su")
         for (i in 0..6) {
-
             val recycler = createRecycler()
             val adapter = (recycler.adapter as RecyclerAdapter)
 
@@ -104,7 +124,6 @@ class MainActivity : AppCompatActivity() {
             recyclerViews.add(recycler)
         }
         viewPagerAdapter.replaceData(recyclerViews)
-        viewPagerAdapter.notifyDataSetChanged()
 
         setCurrentDayOfWeek()
     }
@@ -156,7 +175,7 @@ class MainActivity : AppCompatActivity() {
         return courseRecyclerView
     }
 
-    private fun setupAds(){
+    private fun setupAds() {
         val adRequest = AdRequest.Builder()
                 .addTestDevice("CEA54CA528FB019B75536189748EAF7E")
                 .addTestDevice("2F42DCE5AF01E77FB3B1748FFD2BFB08")
