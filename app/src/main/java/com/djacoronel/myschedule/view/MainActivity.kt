@@ -69,6 +69,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == 1) {
         } else if (requestCode == 2) {
             if (resultCode == Activity.RESULT_OK) {
+
                 val studNo = data.getStringExtra("studNo")
                 val password = data.getStringExtra("password")
 

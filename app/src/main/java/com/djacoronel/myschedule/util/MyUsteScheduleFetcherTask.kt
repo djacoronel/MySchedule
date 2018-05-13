@@ -2,7 +2,6 @@ package com.djacoronel.myschedule.util
 
 import android.app.ProgressDialog
 import android.os.AsyncTask
-import android.util.Log
 import com.djacoronel.myschedule.data.Course
 import com.djacoronel.myschedule.view.MainActivity
 import org.jetbrains.anko.toast
@@ -37,7 +36,7 @@ class MyUsteScheduleFetcherTask(activity: MainActivity) : AsyncTask<String, Void
         try {
             HttpsTrustManager.allowAllSSL()
             val cookies = getCookies()
-            val rows = loginAndGetSchduleTableRows(studNo, password, cookies)
+            val rows = loginAndGetScheduleTableRows(studNo, password, cookies)
             for (i in 1..rows.lastIndex) {
                 addCourse(rows[i], courses)
             }
@@ -58,8 +57,8 @@ class MyUsteScheduleFetcherTask(activity: MainActivity) : AsyncTask<String, Void
         return response.cookies()
     }
 
-    private fun loginAndGetSchduleTableRows(studNo: String, password: String,
-                                            cookies: MutableMap<String, String>): Elements {
+    private fun loginAndGetScheduleTableRows(studNo: String, password: String,
+                                             cookies: MutableMap<String, String>): Elements {
         Jsoup.connect("https://myuste.ust.edu.ph/student/loginProcess")
                 .cookies(cookies)
                 .data("txtUsername", studNo)
@@ -103,7 +102,6 @@ class MyUsteScheduleFetcherTask(activity: MainActivity) : AsyncTask<String, Void
                     day = "${charArray[i]}"
                     i+=1
                 }
-                Log.i("TEST",day)
                 course.day = day
 
                 var location = ""
