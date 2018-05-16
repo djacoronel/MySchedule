@@ -136,8 +136,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setNotifications() {
         disposables.add(
-                Observable.just(db)
-                        .map { db -> db.CourseDao().getCourses() }
+                Observable.fromCallable { db.CourseDao().getCourses() }
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .flatMapIterable { course -> course }
@@ -212,6 +211,7 @@ class MainActivity : AppCompatActivity() {
 
     public override fun onDestroy() {
         disposables.clear()
+        db.close()
         if (adView != null) {
             adView.destroy()
         }
