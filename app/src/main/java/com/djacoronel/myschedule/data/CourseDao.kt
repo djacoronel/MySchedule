@@ -10,6 +10,9 @@ interface CourseDao{
     @Query("SELECT * FROM course")
     fun getCourses(): List<Course>
 
+    @Query("SELECT * FROM course WHERE day = :day")
+    fun getCourses(day: String): List<Course>
+
     @Query("SELECT * FROM course WHERE id = :id")
     fun getCourse(id: Long): Course
 

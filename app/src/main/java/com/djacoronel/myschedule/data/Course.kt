@@ -2,6 +2,7 @@ package com.djacoronel.myschedule.data
 
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
+import java.text.SimpleDateFormat
 import java.util.*
 
 /**
@@ -17,6 +18,16 @@ class Course {
     var day = ""
     var schedule = ""
     var location = ""
+
+    fun getStartTime(): Long {
+        if (schedule != "") {
+            val split = schedule.split(" ")
+            val startTimeString = split[0]
+            val date = SimpleDateFormat("hh:mmaa", Locale.US).parse(startTimeString)
+            return date.time
+        }
+        return 0
+    }
 
     fun getReminderTime(): Long {
         if (schedule != "") {

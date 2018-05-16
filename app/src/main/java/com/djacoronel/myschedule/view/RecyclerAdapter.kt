@@ -41,5 +41,6 @@ class RecyclerAdapter : RecyclerView.Adapter<RecyclerAdapter.ViewHolder>() {
 
     fun replaceData(courses: List<Course>){
         this.courses = courses
+        notifyDataSetChanged()
     }
 }

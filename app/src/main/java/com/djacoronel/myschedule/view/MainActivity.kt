@@ -32,15 +32,15 @@ import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
-    lateinit var viewPagerAdapter: ViewPagerAdapter
-    lateinit var db: AppDatabase
+    private lateinit var viewPagerAdapter: ViewPagerAdapter
+    private lateinit var db: AppDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         db = Room.databaseBuilder(applicationContext,
-                AppDatabase::class.java, "myschedule-database").allowMainThreadQueries().build()
+                AppDatabase::class.java, "myschedule-database").build()
 
         setSupportActionBar(toolbar)
         viewPagerAdapter = ViewPagerAdapter()
@@ -100,50 +100,53 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun storeSchedule(courses: List<Course>) {
-        db.CourseDao().deleteAllCourses()
-        for (course in courses) {
-            db.CourseDao().insertCourse(course)
-        }
-        showSchedule()
-        setNotifications()
+        Observable.just(courses)
+                .flatMapIterable { course -> course }
+                .map {course -> db.CourseDao().insertCourse(course) }
+                .doOnSubscribe { db.CourseDao().deleteAllCourses() }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doFinally {
+                    showSchedule()
+                    setNotifications()
+                }
+                .subscribe {}
     }
 
     private fun showSchedule() {
-        val courses = db.CourseDao().getCourses()
-
-        val recyclerViews = mutableListOf<RecyclerView>()
-        val days = listOf("M", "T", "W", "Th", "F", "S", "Su")
-        for (i in 0..6) {
-            val recycler = createRecycler()
-            val adapter = (recycler.adapter as RecyclerAdapter)
-
-            val coursesForDay = courses.filter { it.day == days[i] }
-            adapter.replaceData(coursesForDay.sortedBy { it.getReminderTime() })
-            adapter.notifyDataSetChanged()
-
-            recyclerViews.add(recycler)
-        }
-        viewPagerAdapter.replaceData(recyclerViews)
-
-        setCurrentDayOfWeek()
+        Observable.just("M", "T", "W", "Th", "F", "S", "Su")
+                .map { day -> db.CourseDao().getCourses(day) }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .doOnSubscribe { viewPagerAdapter.clearData() }
+                .doFinally { setCurrentDayOfWeek() }
+                .subscribe { courses ->
+                    val recycler = createRecycler()
+                    val adapter = (recycler.adapter as RecyclerAdapter)
+                    adapter.replaceData(courses.sortedBy { it.getStartTime() })
+                    viewPagerAdapter.addRecycler(recycler)
+                }
     }
 
     private fun setNotifications() {
-        val courses = db.CourseDao().getCourses()
+        Observable.just(db)
+                .map { db -> db.CourseDao().getCourses() }
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .flatMapIterable { course -> course }
+                .subscribe { course ->
+                    val alarmIntent = Intent(this, AlarmReceiver::class.java)
+                    alarmIntent.putExtra("courseCode", course.code)
+                    alarmIntent.putExtra("location", course.location)
+                    alarmIntent.putExtra("schedule", course.schedule)
 
-        for (course in courses) {
-            val alarmIntent = Intent(this, AlarmReceiver::class.java)
-            alarmIntent.putExtra("courseCode", course.code)
-            alarmIntent.putExtra("location", course.location)
-            alarmIntent.putExtra("schedule", course.schedule)
+                    val requestCode = course.hashCode()
+                    val pendingIntent = PendingIntent.getBroadcast(this, requestCode, alarmIntent, PendingIntent.FLAG_ONE_SHOT)
+                    val manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-            val requestCode = courses.indexOf(course)
-            val pendingIntent = PendingIntent.getBroadcast(this, requestCode, alarmIntent, PendingIntent.FLAG_ONE_SHOT)
-            val manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-            manager.set(AlarmManager.RTC_WAKEUP, course.getReminderTime(), pendingIntent)
-            manager.setRepeating(AlarmManager.RTC_WAKEUP, course.getReminderTime(), AlarmManager.INTERVAL_DAY * 7, pendingIntent)
-        }
+                    manager.set(AlarmManager.RTC_WAKEUP, course.getReminderTime(), pendingIntent)
+                    manager.setRepeating(AlarmManager.RTC_WAKEUP, course.getReminderTime(), AlarmManager.INTERVAL_DAY * 7, pendingIntent)
+                }
     }
 
     private fun setCurrentDayOfWeek() {
@@ -224,8 +227,8 @@ class MainActivity : AppCompatActivity() {
             return recyclerView
         }
 
-        override fun destroyItem(container: ViewGroup, position: Int, `object`: Any) {
-            container.removeView(mRecyclerList[position])
+        override fun destroyItem(container: ViewGroup, position: Int, view: Any) {
+            container.removeView(view as View)
         }
 
         override fun getItemPosition(`object`: Any): Int {
@@ -236,8 +239,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        fun replaceData(recyclerViews: MutableList<RecyclerView>) {
-            mRecyclerList = recyclerViews
+        fun clearData() {
+            mRecyclerList = mutableListOf()
+            notifyDataSetChanged()
+        }
+
+        fun addRecycler(recyclerView: RecyclerView) {
+            mRecyclerList.add(recyclerView)
             notifyDataSetChanged()
         }
     }
