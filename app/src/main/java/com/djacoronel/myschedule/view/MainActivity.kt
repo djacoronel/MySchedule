@@ -25,6 +25,7 @@ import com.djacoronel.myschedule.util.MyUsteScheduleFetcherUtil
 import com.google.android.gms.ads.AdRequest
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.toast
@@ -33,6 +34,7 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var viewPagerAdapter: ViewPagerAdapter
+    private var disposables = CompositeDisposable()
     private lateinit var db: AppDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,80 +75,86 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == 1) {
         } else if (requestCode == 2) {
             if (resultCode == Activity.RESULT_OK) {
+                disposables.add(
+                        Observable.just(data)
+                                .map { intent ->
+                                    val studNo = intent.getStringExtra("studNo")
+                                    val password = intent.getStringExtra("password")
 
-                Observable.just(data)
-                        .map { intent ->
-                            val studNo = intent.getStringExtra("studNo")
-                            val password = intent.getStringExtra("password")
-
-                            MyUsteScheduleFetcherUtil().getCourses(studNo, password)
-                        }
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .doOnSubscribe { loading.visibility = View.VISIBLE }
-                        .subscribe(
-                                { courses ->
-                                    storeSchedule(courses)
-                                    loading.visibility = View.GONE
-                                },
-                                { throwable ->
-                                    throwable.printStackTrace()
-                                    loading.visibility = View.GONE
-                                    toast("Failed to fetch schedule :/")
+                                    MyUsteScheduleFetcherUtil().getCourses(studNo, password)
                                 }
-                        )
+                                .subscribeOn(Schedulers.io())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .doOnSubscribe { loading.visibility = View.VISIBLE }
+                                .subscribe(
+                                        { courses ->
+                                            storeSchedule(courses)
+                                            loading.visibility = View.GONE
+                                        },
+                                        { throwable ->
+                                            throwable.printStackTrace()
+                                            loading.visibility = View.GONE
+                                            toast("Failed to fetch schedule :/")
+                                        }
+                                )
+                )
             }
         }
     }
 
     private fun storeSchedule(courses: List<Course>) {
-        Observable.just(courses)
-                .flatMapIterable { course -> course }
-                .map {course -> db.CourseDao().insertCourse(course) }
-                .doOnSubscribe { db.CourseDao().deleteAllCourses() }
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .doFinally {
-                    showSchedule()
-                    setNotifications()
-                }
-                .subscribe {}
+        disposables.add(
+                Observable.just(courses)
+                        .flatMapIterable { course -> course }
+                        .map { course -> db.CourseDao().insertCourse(course) }
+                        .doOnSubscribe { db.CourseDao().deleteAllCourses() }
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe({}, {}, {
+                            showSchedule()
+                            setNotifications()
+                        })
+        )
     }
 
     private fun showSchedule() {
-        Observable.just("M", "T", "W", "Th", "F", "S", "Su")
-                .map { day -> db.CourseDao().getCourses(day) }
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .doOnSubscribe { viewPagerAdapter.clearData() }
-                .doFinally { setCurrentDayOfWeek() }
-                .subscribe { courses ->
-                    val recycler = createRecycler()
-                    val adapter = (recycler.adapter as RecyclerAdapter)
-                    adapter.replaceData(courses.sortedBy { it.getStartTime() })
-                    viewPagerAdapter.addRecycler(recycler)
-                }
+        disposables.add(
+                Observable.just("M", "T", "W", "Th", "F", "S", "Su")
+                        .map { day -> db.CourseDao().getCourses(day) }
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .doOnSubscribe { viewPagerAdapter.clearData() }
+                        .doFinally { setCurrentDayOfWeek() }
+                        .subscribe { courses ->
+                            val recycler = createRecycler()
+                            val adapter = (recycler.adapter as RecyclerAdapter)
+                            adapter.replaceData(courses.sortedBy { it.getStartTime() })
+                            viewPagerAdapter.addRecycler(recycler)
+                        }
+        )
     }
 
     private fun setNotifications() {
-        Observable.just(db)
-                .map { db -> db.CourseDao().getCourses() }
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .flatMapIterable { course -> course }
-                .subscribe { course ->
-                    val alarmIntent = Intent(this, AlarmReceiver::class.java)
-                    alarmIntent.putExtra("courseCode", course.code)
-                    alarmIntent.putExtra("location", course.location)
-                    alarmIntent.putExtra("schedule", course.schedule)
+        disposables.add(
+                Observable.just(db)
+                        .map { db -> db.CourseDao().getCourses() }
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .flatMapIterable { course -> course }
+                        .subscribe { course ->
+                            val alarmIntent = Intent(this, AlarmReceiver::class.java)
+                            alarmIntent.putExtra("courseCode", course.code)
+                            alarmIntent.putExtra("location", course.location)
+                            alarmIntent.putExtra("schedule", course.schedule)
 
-                    val requestCode = course.hashCode()
-                    val pendingIntent = PendingIntent.getBroadcast(this, requestCode, alarmIntent, PendingIntent.FLAG_ONE_SHOT)
-                    val manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                            val requestCode = course.hashCode()
+                            val pendingIntent = PendingIntent.getBroadcast(this, requestCode, alarmIntent, PendingIntent.FLAG_ONE_SHOT)
+                            val manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-                    manager.set(AlarmManager.RTC_WAKEUP, course.getReminderTime(), pendingIntent)
-                    manager.setRepeating(AlarmManager.RTC_WAKEUP, course.getReminderTime(), AlarmManager.INTERVAL_DAY * 7, pendingIntent)
-                }
+                            manager.set(AlarmManager.RTC_WAKEUP, course.getReminderTime(), pendingIntent)
+                            manager.setRepeating(AlarmManager.RTC_WAKEUP, course.getReminderTime(), AlarmManager.INTERVAL_DAY * 7, pendingIntent)
+                        }
+                )
     }
 
     private fun setCurrentDayOfWeek() {
@@ -203,6 +211,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     public override fun onDestroy() {
+        disposables.clear()
         if (adView != null) {
             adView.destroy()
         }
