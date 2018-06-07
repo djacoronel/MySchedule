@@ -78,10 +78,9 @@ class MainActivity : AppCompatActivity() {
                 disposables.add(
                         Observable.just(data)
                                 .map { intent ->
-                                    val studNo = intent.getStringExtra("studNo")
-                                    val password = intent.getStringExtra("password")
+                                    val cookie = intent.getStringExtra("cookie")
 
-                                    MyUsteScheduleFetcherUtil().getCourses(studNo, password)
+                                    MyUsteScheduleFetcherUtil().getCourses(cookie)
                                 }
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())

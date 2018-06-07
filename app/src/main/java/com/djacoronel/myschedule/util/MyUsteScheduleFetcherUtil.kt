@@ -12,12 +12,13 @@ import org.jsoup.select.Elements
 class MyUsteScheduleFetcherUtil {
     private val userAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36"
 
-    fun getCourses(studNo: String, password: String): List<Course>{
+    fun getCourses(cookie:String): List<Course>{
+        val cookieName = cookie.split("=")[0]
+        val cookieValue = cookie.split("=")[1]
         val courses = arrayListOf<Course>()
 
         HttpsTrustManager.allowAllSSL()
-        val cookies = getCookies()
-        val rows = loginAndGetScheduleTableRows(studNo, password, cookies)
+        val rows = getScheduleTableRows(cookieName, cookieValue)
         for (i in 1..rows.lastIndex) {
             addCourse(rows[i], courses)
         }
@@ -25,28 +26,9 @@ class MyUsteScheduleFetcherUtil {
         return courses
     }
 
-    private fun getCookies(): MutableMap<String, String> {
-        val url = "https://myuste.ust.edu.ph/student"
-        val response = Jsoup.connect(url).userAgent(userAgent)
-                .method(Connection.Method.GET)
-                .execute()
-
-        return response.cookies()
-    }
-
-    private fun loginAndGetScheduleTableRows(studNo: String, password: String,
-                                             cookies: MutableMap<String, String>): Elements {
-        Jsoup.connect("https://myuste.ust.edu.ph/student/loginProcess")
-                .cookies(cookies)
-                .data("txtUsername", studNo)
-                .data("txtPassword", password)
-                .userAgent(userAgent)
-                .method(Connection.Method.POST)
-                .followRedirects(true)
-                .execute()
-
+    private fun getScheduleTableRows(cookieName: String, cookieValue: String): Elements {
         val doc = Jsoup.connect("https://myuste.ust.edu.ph/student/mySchedule.jsp")
-                .cookies(cookies)
+                .cookie(cookieName, cookieValue)
                 .userAgent(userAgent)
                 .get()
 

@@ -5,6 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.webkit.CookieManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import com.djacoronel.myschedule.R
 import com.google.android.gms.ads.AdRequest
 import kotlinx.android.synthetic.main.activity_login.*
@@ -16,46 +20,36 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
-        fetch_button.setOnClickListener { onFetchButtonPressed() }
-        loadPrefs()
+        webview.loadUrl("https://myuste.ust.edu.ph/student/")
+        webview.settings.javaScriptEnabled = true
+        webview.webViewClient = LoginWebViewClient()
         setupAds()
     }
 
 
-    private fun loadPrefs() {
-        val sharedPref = getPreferences(Context.MODE_PRIVATE)
-        val rememberMe = sharedPref.getBoolean("rememberMe", false)
-        if (rememberMe) {
-            studNo.setText(sharedPref.getString("studNo", ""))
-            password.setText(sharedPref.getString("password", ""))
-            remember_me.isChecked = rememberMe
-        }
+    fun returnCookie(cookie: String){
+        val returnIntent = Intent()
+        returnIntent.putExtra("cookie", cookie)
+
+        setResult(Activity.RESULT_OK, returnIntent)
+        finish()
     }
 
-    private fun onFetchButtonPressed() {
-        if (studNo.text.toString().length == 10 && password.text.isNotEmpty()) {
-            val returnIntent = Intent()
-            val sharedPref = getPreferences(Context.MODE_PRIVATE)
-            val editor = sharedPref.edit()
 
-            if (remember_me.isChecked) {
-                editor.putBoolean("rememberMe", remember_me.isChecked)
-                editor.putString("studNo", studNo.text.toString())
-                editor.putString("password", password.text.toString())
-                editor.apply()
-            } else {
-                editor.putBoolean("rememberMe", remember_me.isChecked)
-                editor.putString("studNo", "")
-                editor.putString("password", "")
-                editor.apply()
+    inner class LoginWebViewClient : WebViewClient() {
+        var cookie = ""
+
+        override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+            if (url.contains("studentcontrol")) {
+                this@LoginActivity.returnCookie(cookie)
+                return true
             }
+            return false
+        }
 
-            returnIntent.putExtra("studNo", studNo.text.toString())
-            returnIntent.putExtra("password", password.text.toString())
-            setResult(Activity.RESULT_OK, returnIntent)
-            finish()
-        } else {
-            toast("Invalid student number or password")
+        override fun onPageFinished(view: WebView, url: String) {
+            cookie = CookieManager.getInstance().getCookie(url)
+            Log.d("COOKIES!!", "All the cookies in a string:$cookie")
         }
     }
 
